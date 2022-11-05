@@ -803,11 +803,13 @@ class FloorPlaneGroup
 
         let triangles2 = wallLines.map( linedef => {
 
+            if (linedef.user_nocast) return null;
+
             let { vertices, sectors } = linedef;
 
             if (sectors && sectors.length && sectors[0]){
                 let corners = [
-                    new Vector3(vertices[0].x, FloorPlane.getVertexZ(sectors[0], vertices[0], true), -vertices[0].y ),
+                    new Vector3(vertices[0].x, FloorPlane.getVertesxZ(sectors[0], vertices[0], true), -vertices[0].y ),
                     new Vector3(vertices[0].x, sectors[0].heightceiling, -vertices[0].y ),
                     new Vector3(vertices[1].x, sectors[0].heightceiling, -vertices[1].y ),
                     new Vector3(vertices[1].x, FloorPlane.getVertexZ(sectors[0], vertices[0], true), -vertices[1].y )
