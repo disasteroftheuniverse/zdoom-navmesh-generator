@@ -51,6 +51,10 @@ Edge Max Length - maximum edge length, in voxels
 Edge Max Error  - how loosely the simplification is done
 ```
 
+Once you have customized your settings, press `Build Navigation Mesh` to build the mesh.
+
+You may press `Shut Down Server` to terminate the express server process.
+
 #### Excluding Regions
 
 To exclude sectors from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to a sector, set its type to `Boolean` and its value to `true`.
