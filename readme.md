@@ -1,12 +1,10 @@
 # ZDoom Navigation Mesh Generator
-
 Automatically generate navigation meshes for your UDMF-format maps.
 
-##Installation
-
+###Installation
 First, you will need to install [Node.js](https://nodejs.org/en/)
 
-Clone this repository to your desired directory
+Once Node.js is installed, clone this repository to your desired directory
 
 ```sh
 git clone https://github.com/disasteroftheuniverse/zdoom-navmesh-generator
