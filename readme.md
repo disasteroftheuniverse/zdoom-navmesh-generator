@@ -2,7 +2,7 @@
 Automatically generate navigation meshes for your UDMF-format ZDoom maps.
 
 ![image](https://imgur.com/O7thc1W.png)
-### Installation
+## Installation
 
 First, you will need to install [Node.js](https://nodejs.org/en/)
 
@@ -31,5 +31,36 @@ npm run start
 
 If successful, you will recieve a success message with links to the configuration menu and main application. Open the links in a web browser to enter the app. 
 
+## Usage
+
+#### Configuration
+
 **You _must_ create a configuration file before generating a navigation mesh.**
+
+#### Nav Mesh Settings
+```
+Cell Size - voxelization cell size 
+Cell Height - voxelization cell height
+Agent Height - Agent capsule  height
+Agent Radius - Agent capsule  radius
+Agent Max Step Height - how high steps agents can climb, in voxels
+Agent Max Slope - maximum slope angle, in degrees
+Region Min Size -  minimum isolated region size that is still kept
+Region Merge Size - how large regions can be still merged
+Edge Max Length - maximum edge length, in voxels
+Edge Max Error  - how loosely the simplification is done
+```
+
+#### Excluding Regions
+
+To exclude sectors from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to a sector, set its type to `Boolean` and its value to `true`.
+
+To exclude linedefs from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to the linedef, set its type to `Boolean` and its value to `true`.
+
+#### TODO
+
+* Support for obstacles
+* Support for Patrol Nodes
+* Custom off-mesh connections defined by things
+* Support for blocking lines
 
