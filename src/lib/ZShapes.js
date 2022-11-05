@@ -12,12 +12,10 @@ const {
     Line3
 } = require('three');
 
-
-class ZShape {
-
-
+//this class just defines collections of linedefs which define the contours and holes of a polygon
+class ZShape 
+{
     static isPointInShape(shape, pt) {
-        
         let poly = shape.vertices.map( vert => vert.v );
 
         for (var c = false, i = -1, l = poly.length, j = l - 1; ++i < l; j = i)
@@ -42,6 +40,74 @@ class ZShape {
     {
         let child = _.find(list, function(linedef) {
             return linedef.hasVertex(CurVertex) && !linedef.isFree && linedef.index !== CurLine.index;
+        });
+
+        if (child) return child;
+
+        return null;
+    }
+
+
+    static findConnectedParents(list, CurLine, CurVertex, sector)
+    {
+        let child = _.find(list, function(linedef) {
+            return linedef.hasVertex(CurVertex) && 
+            !linedef.isFree && 
+            sector.vertices.indexOf( linedef.getOtherVertex(CurVertex)) > -1 &&
+            linedef.index !== CurLine.index;
+        });
+
+        if (child) return child;
+
+        return null;
+    }
+
+    static areSectorsTheSame(sector1, sector2)
+    {
+        if (sector1 == null && sector2 == null) return true;
+        if (sector1 == null  && sector2 !== null || sector1 !== null  && sector2 == null) return false;
+        if (sector1.uuid == sector2.uuid) return true;
+        return false;
+    }
+
+
+    static areSharedSectorsTheSame(sector1, sector2)
+    {
+        if (sector1 == null || sector2 == null) return false;
+        //if (sector1 == null && sector2 !== null || sector1 !== null && sector2 == null) return false;
+        if (sector1.uuid == sector2.uuid) return true;
+        return false;
+    }
+
+    static linesShareSectors(linedef1, linedef2)
+    {
+        let shared =  (
+            (ZShape.areSectorsTheSame(linedef1.sectors[0], linedef2.sectors[0]) && ZShape.areSectorsTheSame(linedef1.sectors[1], linedef2.sectors[1])) ||
+            (ZShape.areSectorsTheSame(linedef1.sectors[0], linedef2.sectors[1]) && ZShape.areSectorsTheSame(linedef1.sectors[1], linedef2.sectors[0]))
+        );
+        return shared;
+    }
+
+    static findConnectedAndSector(list, CurLine, CurVertex)
+    {
+        let child = _.find(list, function(linedef) {
+            return linedef.hasVertex(CurVertex) && !linedef.isFree && linedef.index !== CurLine.index && ZShape.linesShareSectors(CurLine, linedef);
+        });
+
+        if (child) return child;
+
+        return null;
+    }
+
+    static findConnectedAndParentSector(list, CurLine, CurVertex, sector)
+    {
+        let child = _.find(list, function(linedef) {
+            return linedef.hasVertex(CurVertex) && 
+                !linedef.isFree && 
+                linedef.index !== CurLine.index && 
+                sector.vertices.indexOf( linedef.getOtherVertex(CurVertex)) > -1 &&
+                ZShape.linesShareSectors(CurLine, linedef);
+            //ZShape.areSectorsTheSame( CurLine.getOtherSector(sector), linedef.getOtherSector(sector) );
         });
 
         if (child) return child;
@@ -127,6 +193,7 @@ class ZShape {
         var availableLines = _.clone(LinesWithOutShapes);
 
         var startLineDef = ZShape.getNorthMost(LinesWithOutShapes);
+        //var startSector = startLineDef.getOtherSector(target);
 
         var startVertex = startLineDef.vertices[0];
         var CurVertex = startVertex;
@@ -154,7 +221,19 @@ class ZShape {
                 break;
             }
 
-            let child = ZShape.findConnected(availableLines, CurLine, CurVertex);
+            let child = ZShape.findConnectedAndParentSector(LinesWithOutShapes, CurLine, CurVertex, target);
+
+            if (!child) {
+                child = ZShape.findConnectedAndParentSector(LinesWithOutShapes, CurLine, CurVertex, target);
+            }
+
+            if (!child && border.length > 2) {
+                child = ZShape.findConnectedAndParentSector(availableLines, CurLine, CurVertex, target);
+            }
+
+            if (!child) {
+                child = ZShape.findConnectedParents(availableLines, CurLine, CurVertex, target);
+            }
 
             if (child) 
             {
@@ -302,9 +381,9 @@ class ZShape {
 
 }
 
+//this class just defines a walkable surface that can be turned into triangles
 class FloorPlane
 {
-
     static getTrianglesFromShape2D(shape)
     {
         var index = 0;
@@ -792,82 +871,4 @@ class FloorPlaneGroup
 }
 
 const ZShapes = FloorPlaneGroup;
-
-
 module.exports = ZShapes;
-
-
-/*
-
-
-        if (sector.slopedFloor) 
-        {
-            var downRay = new Line3();
-
-            var n = new Vector3(sector.floorplane_a, sector.floorplane_c, sector.floorplane_b);//.normalize();
-            var floorPlane = new Plane(n, sector.floorplane_d);
-
-            var sectorVerts = this.sector.vertices.map(vert => new Vector3(vert.x, Number.MAX_SAFE_INTEGER, vert.y));
-
-            var ZVerts = sectorVerts
-                .map(function (pt) {
-                    downRay.set(pt, new Vector3(pt.x, -pt.y, pt.z));
-                    var castPoint = new Vector3();
-
-                    floorPlane.intersectLine(downRay, castPoint);
-
-                    return castPoint.set(castPoint.x, castPoint.z, castPoint.y);
-                });
-
-            //console.log(ZVerts);
-        }
-
-     OLDtriangulate() {
-        let vertices = [];
-        let HoleIndices = [];
-        let index = 0;
-
-        //create outline
-        this.vertices.forEach(vertex => {
-            vertices.push(vertex.v);
-            index++;
-        });
-
-        //create holes
-        this.shapes.forEach(shape => {
-            HoleIndices.push(index);
-            shape.vertices.forEach(vertex => {
-                vertices.push(vertex.v);
-                index++;
-            });
-        });
-
-        //create triangles
-        if (!HoleIndices) HoleIndices = null;
-        vertices = earcut(vertices.map(v => v.toArray()).flat(), HoleIndices, 2).map(index => vertices[index]);
-
-        return vertices;
-    }
-
-    OLDgetShapes() {
-        let outline = [];
-        let holes = [];
-
-        this.vertices.forEach(vertex => {
-            outline.push(new Vector3(vertex.x, this.zsector.sector.heightfloor, vertex.y));
-        }, this);
-
-        this.shapes.forEach(shape => {
-            let hole = [];
-            shape.vertices.forEach(vertex => {
-                hole.push(new Vector3(vertex.x, this.zsector.sector.heightfloor, vertex.y));
-            }, this);
-
-            holes.push(hole);
-        }, this);
-
-        return { outline: outline, holes: holes };
-    }
-
-
-*/
