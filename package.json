@@ -9,6 +9,7 @@
   "author": "patrick pineda",
   "license": "MIT",
   "dependencies": {
+    "cdt2d": "^1.0.0",
     "chalk": "^4.1.2",
     "color": "^4.2.3",
     "earcut": "^2.2.4",
