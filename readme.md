@@ -2,7 +2,7 @@
 
 Automatically generate navigation meshes for your UDMF-format maps.
 
-###Installation
+##Installation
 
 First, you will need to install [Node.js](https://nodejs.org/en/)
 
