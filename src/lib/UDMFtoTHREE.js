@@ -221,6 +221,7 @@ class UDMFtoTHREE
 		}
 
 		previewObj.add( wallPreview );
+		obj.add( wallPreview.clone() );
 
 		let mergedGeometriesPreview = THREE.BufferGeometryUtils.mergeBufferGeometries(previewGeometries);
 		mergedGeometriesPreview = THREE.BufferGeometryUtils.mergeVertices(mergedGeometriesPreview, 0.001);
