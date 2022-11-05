@@ -1,0 +1,32 @@
+{
+  "name": "zdoom-navmesh-generator",
+  "version": "1.0.0",
+  "description": "nav meshes for gzdoom",
+  "main": "build.js",
+  "scripts": {
+    "start": "node server/server"
+  },
+  "author": "patrick pineda",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "color": "^4.2.3",
+    "earcut": "^2.2.4",
+    "express": "^4.18.2",
+    "figlet": "^1.5.2",
+    "libtess": "^1.2.2",
+    "lodash": "^4.17.21",
+    "nearley": "^2.20.1",
+    "nlump": "^0.2.3",
+    "nwad": "^0.2.1",
+    "polygon-centroid": "^1.1.0",
+    "recastjs": "^0.1.16",
+    "short-unique-id": "^4.4.4",
+    "short-uuid": "^4.2.2",
+    "strip-comments": "^2.0.1",
+    "strip-json-comments": "^5.0.0",
+    "tess2": "^1.0.0",
+    "three": "^0.146.0",
+    "three-pathfinding": "^1.1.0"
+  }
+}

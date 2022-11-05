@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Configure Navmesher</title>
+    <meta name="description" content="create config for nav mesh app">
+    <style>
+        body {
+            font-family: "Lucida Console", "Courier New", monospace;
+            font-size: small;
+            background-color: #0f0f0f;
+            color: #fff;
+        }
+
+        #submit {
+            font-family: "Lucida Console", "Courier New", monospace;
+        }
+
+        span.tooltip {
+            /*
+            text-decoration: underline;
+            cursor: pointer;*/
+        }
+
+        span.tooltip:hover {
+            text-decoration: underline;
+            /*cursor: pointer;*/
+        }
+
+        input[type=text]
+        {
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <fieldset style="width: 500px; font: ">
+        <legend>Generate Configuration</legend>
+        <br>
+        <label for="wadspath"><span class="tooltip" title="list the full file path where your wad files are located">Wadfile Directory</span></label>
+        <input name="wadspath" id="wadspath" type="text" class="configs">
+        <br><br>
+        <label for="configspath"><span class="tooltip" title="where you wish to save config files">Configs Directory</span></label>
+        <input name="configspath" id="configspath" type="text" class="configs">
+        <br><br>
+        <label for="meshpath"><span class="tooltip" title="where you wish to save generated nav meshes">Mesh Directory</span></label>
+        <input name="meshpath" id="meshpath" type="text" class="configs">
+        <br><br>
+        <input id="submit" type="submit" value="Generate Config" >
+        <span>Status: </span><span id="answer"> not sent </span>
+        <br>
+    </fieldset>
+
+    <script>
+        let submit = document.querySelector("#submit");
+        let answer = document.querySelector("#answer");
+
+        function onload(response)
+        {
+            console.log(response);
+            if (response!=='OK')
+            {
+                answer.setAttribute('style', 'color: red;');
+                answer.innerText = response;
+            } else {
+                answer.setAttribute('style', 'color: green;')
+                answer.innerText = 'accepted';
+            }
+
+        }
+        submit.addEventListener('click', function()
+        {
+            let xmlHttp = new XMLHttpRequest();
+            let data = {};
+            document.querySelectorAll('.configs').forEach ( elem => { data[elem.name] = elem.value});
+            
+            xmlHttp.open( "POST", `/cfg`); // false for synchronous request
+            xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xmlHttp.send(JSON.stringify( data ));
+
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState == XMLHttpRequest.DONE) {
+                    onload(xmlHttp.responseText);
+                }
+            };
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Nav Mesh Previewer</title>
+    <script src="prev/aframe-master.min.js"></script>
+    <script src="prev/components.js"></script>
+    <script src="prev/lodash.js"></script>
+    <script src="prev/index.js" type="module"></script>
+</head>
+
+<body>
+
+    <a-scene background="color: black;">
+
+        <a-entity 
+            id="camera" 
+            camera 
+            look-controls 
+            position="0 32 0" 
+            rotation="90 0 0" 
+            wasd-controls="acceleration:200; 
+            fly: true;"
+        ></a-entity>
+
+        <a-entity icons>
+            <a-entity id="levelmesh"></a-entity>
+        </a-entity>
+
+    </a-scene>
+
+    <script>
+
+    </script>
+</body>
+
+</html>
