@@ -1,4 +1,5 @@
 # ZDoom Navigation Mesh Generator
+![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey)
 Automatically generate navigation meshes for your UDMF-format ZDoom maps.
 
 ![image](https://imgur.com/O7thc1W.png)
