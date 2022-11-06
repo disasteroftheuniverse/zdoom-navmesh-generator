@@ -9,6 +9,9 @@ First, you will need to install [Node.js](https://nodejs.org/en/)
 
 Once Node.js is installed, clone this repository to your desired directory
 
+You will need to run these commands from a command line utility like git bash or PowerShell.
+
+
 ```sh
 git clone https://github.com/disasteroftheuniverse/zdoom-navmesh-generator
 ```
