@@ -1,8 +1,10 @@
 # ZDoom Navigation Mesh Generator
 ![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey)
-Automatically generate navigation meshes for your UDMF-format ZDoom maps.
 
 ![image](https://imgur.com/O7thc1W.png)
+
+Robust pathfinding for [GZDoom](https://zdoom.org/index). Automatically generate navigation meshes for use with [zdoom-pathfinding](https://github.com/disasteroftheuniverse/zdoom-pathfinding).
+
 ## Installation
 
 First, you will need to install [Node.js](https://nodejs.org/en/)
