@@ -1,5 +1,5 @@
 # ZDoom Navigation Mesh Generator
-![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey) ![Discord](https://img.shields.io/discord/882788591581937734?label=discord&style=social)
+![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey) ![Discord](https://img.shields.io/discord/882788591581937734?label=discord&style=flat) [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dbeyondsunset%26type%3Dpatrons&style=flat)](https://patreon.com/beyondsunset)
 
 ![image](https://imgur.com/O7thc1W.png)
 
