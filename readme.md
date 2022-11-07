@@ -1,5 +1,5 @@
 # ZDoom Navigation Mesh Generator
-![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey)
+![image](https://img.shields.io/badge/status-WIP-orange) ![image](https://img.shields.io/badge/status-concept-lightgrey) ![Discord](https://img.shields.io/discord/882788591581937734?label=discord&style=social)
 
 ![image](https://imgur.com/O7thc1W.png)
 
