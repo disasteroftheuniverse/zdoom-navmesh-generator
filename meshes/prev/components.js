@@ -12,6 +12,9 @@ AFRAME.registerComponent('icons', {
         
         let obj = modelEL.object3D;
         let self = this;
+
+        self.idents = [];
+        var idents = self.idents;
         
 
         sceneEl.addEventListener('nuke', function(){
@@ -52,6 +55,7 @@ AFRAME.registerComponent('icons', {
                 depthWrite: false,
             });
 
+            
 
             obj.traverse( (node) => {
                 if ( node.name === 'offnode.vis')
@@ -66,7 +70,22 @@ AFRAME.registerComponent('icons', {
                     self.icons.push(iconObj);
                     icons.add(iconObj);
                 }
+
+                /*if (node.userData.centroid)
+                {
+                    var cnt = node.userData.centroid;
+                    console.log(node.userData.centroid);
+                    let v3 = new THREE.Vector3(cnt.x, cnt.z + 1, cnt.y).divideScalar(64);
+                    let msg = node.userData.nodeIndex;
+                    let centroidStr = `${v3.x} ${v3.y} ${v3.z}`;
+                    let idElem = `<a-entity position="${centroidStr}" text="value: ${msg}; width: 8;"></a-entity>`;
+                    idents.push(idElem);
+                }*/
             });
+
+            //idents.forEach( item => modelEL.insertAdjacentHTML('beforeend', item) );
+            //;
+
             let level = modelEL.object3DMap.level;
             level.add( icons );
             icons.scale.multiplyScalar(1/64);

@@ -81,16 +81,19 @@ class BlockMap
             return BlockMap.getVertex(vertexmap, vid);
         });
 
+        //console.log(vertices);
+
         let box = new THREE.Box3();
         vertices.forEach (v3 => {
             box.expandByPoint(v3);
         });
 
         let flatVertices = vertices.map (vert => {
-            return new THREE.Vector3(vert.x, 0, vert.z);
+            return new THREE.Vector3(vert.x, vert.y, 0);
         });
 
-        let indices = earcut ( vertices.map( v=> new THREE.Vector2(v.x, v.z).toArray()).flat(), null, 2);
+        let indices = earcut ( vertices.map( v=> new THREE.Vector2(v.x, v.y).toArray()).flat(), null, 2);
+
         let triangles = 
         _.chunk( indices
             .map ( ind => vertices[ind] ), 3)
@@ -106,19 +109,20 @@ class BlockMap
             var inCell = (node.b.indexOf ( cellIndex ) > -1);
             if (!inCell)
             {
-                if ( b.containsBox(box) || b.intersectsBox(box) )
-                {
+                //if ( b.containsBox(box) || b.intersectsBox(box) )
+                //{
                     triangles.forEach( triangle =>
                     {
                         if ( node.b.indexOf(cellIndex) < 0)
                         {
                             if (b.intersectsTriangle(triangle))
                             {
+                                //console.log(`triangles found in box ${cellIndex}`);
                                 node.b.push(cellIndex);
                             }
                         }
                     });
-                }
+                //}
             }
         }, this);
     }
@@ -221,9 +225,6 @@ var makeZoneJSON = function(mesh , alt)
 {
     var BoxGrid = new THREE.Box2();
     let zone = alt;
-    //let zone = Pathfinding.createZone(mesh.geometry);
-
-    //console.log(zone.groups[0]);
 
     let vertices = zone.vertices.map( v => toZDoomPos(BoxGrid, v).toArray() ).flat();
 
@@ -264,17 +265,25 @@ var makeZoneJSON = function(mesh , alt)
     });
 
    // nodes = nodes
+    
+    var boxmapData = boxmap.toObj();
 
-    boxmap = boxmap.toObj();
+    nodes.forEach (node => {
+        if (node.b.indexOf(-1) > 0)
+        {
+            console.log(node.b);
+        }
+    });
+
     let obj = { 
         vertices: vertices, 
         nodes: nodes, 
         groups: groups.length, 
-        length: boxmap.length, 
-        sizex: boxmap.size[0], 
-        sizey: boxmap.size[1],
-        originx: boxmap.origin[0],
-        originy: boxmap.origin[1],
+        length: boxmapData.length, 
+        sizex: boxmapData.size[0], 
+        sizey: boxmapData.size[1],
+        originx: boxmapData.origin[0],
+        originy: boxmapData.origin[1],
         res: GRIDRES
     };
 

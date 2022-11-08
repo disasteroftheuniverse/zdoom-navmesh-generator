@@ -79,6 +79,7 @@ var getLevel = function( LevelName, preview, MasterConfig )
 var buildNavMesh = function (LevelName, config, MasterConfig)
 {
     var navScene;
+    var previewWavefront;
     return new Promise ( function(resolve, reject){
 
         var threescene;
@@ -99,7 +100,8 @@ var buildNavMesh = function (LevelName, config, MasterConfig)
         })
     
         .then( navmesh => {
-            let { mesh, preview, alt } = navmesh;
+            let { mesh, preview, alt, wavefront } = navmesh;
+            previewWavefront = wavefront;
             navScene = preview;
             return makeZoneJSON(mesh, alt);
         })
@@ -108,9 +110,13 @@ var buildNavMesh = function (LevelName, config, MasterConfig)
             //console.log(data);
             let thing1 = JSON.stringify( data, null);
             let buffer1 = Buffer.from(thing1);
+            
+            let OBJBuffer = Buffer.from( previewWavefront );
             let destJSON = path.join(MasterConfig.meshpath, `${LevelName}.json`);
+            let destOBJ = path.join(MasterConfig.meshpath, `navprev.obj`);
 
             fs.writeFileSync(destJSON, buffer1, {encoding: 'utf-8'});
+            fs.writeFileSync(destOBJ, OBJBuffer, {encoding: 'utf-8'});
 
             const MAP_CONFIG_PATH = getConfigPath(LevelName, MasterConfig);
             fs.writeFileSync( MAP_CONFIG_PATH, Buffer.from ( JSON.stringify(config) ), {encoding: 'utf-8'});
