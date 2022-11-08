@@ -44,6 +44,7 @@ If successful, you will recieve a success message with links to the configuratio
 **You _must_ create a configuration file before generating a navigation mesh.**
 
 #### Nav Mesh Settings
+![image](Controls.png)
 <pre>Cell Size               - voxelization cell size 
 Cell Height             - voxelization cell height
 Agent Height            - Agent capsule  height
@@ -55,12 +56,14 @@ Region Merge Size       - how large regions can be still merged
 Edge Max Length         - maximum edge length, in voxels
 Edge Max Error          - how loosely the simplification is done</pre>
 
+Select your level from the dropdown and press `Load Level` to preview your level.
+
 Once you have customized your settings, press `Build Navigation Mesh` to build the mesh.
 
 You may press `Shut Down Server` to terminate the express server process.
 
 #### Excluding Regions
-
+![image](UDB.png)
 To exclude sectors from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to a sector, set its type to `Boolean` and its value to `true`.
 
 To exclude linedefs from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to the linedef, set its type to `Boolean` and its value to `true`.
