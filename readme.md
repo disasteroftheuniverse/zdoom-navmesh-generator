@@ -11,7 +11,7 @@ First, you will need to install [Node.js](https://nodejs.org/en/)
 
 Once Node.js is installed, clone this repository to your desired directory
 
-You will need to run these commands from a command line utility like git bash or PowerShell.
+You will need to run these commands from a command line utility like [git bash](https://git-scm.com/downloads) or [ Windows PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.2).
 
 
 ```sh
