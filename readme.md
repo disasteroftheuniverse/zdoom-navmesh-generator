@@ -45,7 +45,7 @@ If successful, you will recieve a success message with links to the configuratio
 
 #### Nav Mesh Settings
 
-![image](Controls.png)
+![image](https://imgur.com/DkBrXxR.png)
 
 <pre>Cell Size               - voxelization cell size 
 Cell Height             - voxelization cell height
@@ -66,7 +66,7 @@ You may press `Shut Down Server` to terminate the express server process.
 
 #### Excluding Regions
 
-![image](UDB.png)
+![image](https://imgur.com/4SpIvG6.png)
 
 To exclude sectors from being used to generate nav meshes, you may apply the custom UDMF field `user_nocast` to a sector, set its type to `Boolean` and its value to `true`.
 
