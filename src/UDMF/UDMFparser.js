@@ -4,6 +4,8 @@ const grammar = require("./UDMFGrammar");
 const UDMF = require('./UDMF');
 const Terminal = require('./../lib/term');
 const term = new Terminal();
+const strip = require('strip-comments');
+const eol = require('eol');
 
 class UDMFParser
 {
@@ -31,10 +33,17 @@ class UDMFParser
     {
         return new Promise (function (resolve, reject){ 
 
-            term.say().yellow('Stripping comments...').print();
+            
+            term.say().yellow('CLRF => LF').print();
+            data = eol.lf( data );
 
-            let stripped = UDMFParser.stripComments(data)
-            .replace(`namespace = "zdoom";`, '').trim();
+            term.say().yellow('Stripping comments...').print();
+            let stripped = strip ( data );
+            let lines = stripped.split('\n');
+            lines.splice(0,1);
+            stripped = lines.join('\n');
+            stripped = stripped.trim();
+
 
             term.say().yellow('Comments Stripped').print();
 
@@ -42,7 +51,29 @@ class UDMFParser
 
             term.say().yellow('Finding blocks...').print();
 
-            let chunked = stripped.split(/^\s*$/gm);
+            let chunked = 
+                stripped.split(/^\s*$/gm)
+                .filter ( str => str !== '');
+                
+            
+            /*.split(/^\}$/gm).map( str => {
+                    if (str.match(/\{/ )) str += '}';
+                    return str.trim();
+                })
+                .filter ( str => str.match(/\{/) && str.match(/\}/) && str !== '' );
+
+            //console.log(chunked[0]);*/
+
+            /*chunked = chunked
+                .map( str => str.trim() )
+                .filter ( str => str !== '' );*/
+
+            //chunked = chunked.map( str => str.trim() );
+            //chunked.shift();
+            //chunked = chunked.filter ( str => str !== '' && !str.match() );
+
+            //let preview = stripped.substring(0, 100);
+            
 
             term.say().yellow('Found ').white(chunked.length).yellow( ' UDMF blocks.').print();
         
@@ -70,6 +101,12 @@ class UDMFParser
                 lastProgress = progress;
 
                 const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+
+                if ( !datachunk.match(/\{/)  ) {
+                    console.log(datachunk);
+                    reject('BAD BLOCK');
+                }
+
                 datachunk = datachunk.trim();
                 parser.feed(datachunk);
         
@@ -99,6 +136,13 @@ class UDMFParser
                 }
         
             });
+
+            for ( var elem in parsedUDMF)
+            {
+                parsedUDMF[elem] = parsedUDMF[elem].filter ( blk => {
+                    return blk !== null && blk !== undefined;
+                });
+            }
 
             let level = new UDMF.Level(parsedUDMF);
 
