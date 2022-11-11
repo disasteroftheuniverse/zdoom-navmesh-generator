@@ -186,7 +186,7 @@ class LineDef extends UDMFBlock {
             sidedef: null
         };
 
-        if (_.has(this, 'sidefront')) {
+        if (_.has(this, 'sidefront') && this.sidefront > -1 ) {
             this.front.sidedef = this.getBlock('sidedefs', this.sidefront);
             this.front.sector = this.front.sidedef.sector;
 
@@ -199,8 +199,18 @@ class LineDef extends UDMFBlock {
                 .addVertex(this.vertices[1]);
         }
 
-        if (_.has(this, 'sideback')) {
-            this.back.sidedef = this.getBlock('sidedefs', this.sideback);
+        if ( _.has(this, 'sideback') && this.sideback > -1  ) {
+            
+            
+            var sddf = this.getBlock('sidedefs', this.sideback);
+
+            if (!sddf)
+            {
+                console.log ( block );
+            }
+
+            this.back.sidedef = sddf;
+
             this.back.sector = this.back.sidedef.sector;
 
             this.sectors[1] = this.back.sector;
