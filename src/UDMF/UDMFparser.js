@@ -32,48 +32,20 @@ class UDMFParser
     static async parse(data)
     {
         return new Promise (function (resolve, reject){ 
-
-            
             term.say().yellow('CLRF => LF').print();
             data = eol.lf( data );
-
             term.say().yellow('Stripping comments...').print();
             let stripped = strip ( data );
             let lines = stripped.split('\n');
             lines.splice(0,1);
             stripped = lines.join('\n');
             stripped = stripped.trim();
-
-
             term.say().yellow('Comments Stripped').print();
-
             term.div();
-
             term.say().yellow('Finding blocks...').print();
-
             let chunked = 
                 stripped.split(/^\s*$/gm)
                 .filter ( str => str !== '');
-                
-            
-            /*.split(/^\}$/gm).map( str => {
-                    if (str.match(/\{/ )) str += '}';
-                    return str.trim();
-                })
-                .filter ( str => str.match(/\{/) && str.match(/\}/) && str !== '' );
-
-            //console.log(chunked[0]);*/
-
-            /*chunked = chunked
-                .map( str => str.trim() )
-                .filter ( str => str !== '' );*/
-
-            //chunked = chunked.map( str => str.trim() );
-            //chunked.shift();
-            //chunked = chunked.filter ( str => str !== '' && !str.match() );
-
-            //let preview = stripped.substring(0, 100);
-            
 
             term.say().yellow('Found ').white(chunked.length).yellow( ' UDMF blocks.').print();
         
