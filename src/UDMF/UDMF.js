@@ -1,18 +1,26 @@
-//jshint esversion: 8
-const _ = require('lodash');
-const short = require('short-uuid');
+// jshint esversion: 8
+// External dependencies
+const _ = require('lodash');                  // Utility library for common operations
+const short = require('short-uuid');         // Generates short UUIDs
 const {
     Vector2,
     Vector3,
     Box2,
     Plane,
     Line3
-} = require('three');
+} = require('three');                        // Three.js classes for geometry operations
 
-
-
-
+/**
+ * UDMFValidator
+ * Helper class to validate and process UDMF key-value pairs
+ */
 class UDMFValidator {
+
+    /**
+     * Convert string 'true'/'false' to Boolean
+     * @param { Object } pair - { key, val }
+     * @returns { Object } updated pair
+     */
     static toBool(pair) {
         if (pair.val == 'true') {
             pair.val = true;
@@ -22,14 +30,25 @@ class UDMFValidator {
         return pair;
     }
 
+    /**
+     * Inverts or adjusts Y value if key is 'y'
+     * @param { Object } pair - { key, val }
+     * @returns { Object } updated pair
+     */
     static invertY(pair) {
-
         if (pair.key == 'y') {
-            pair.val = pair.val * 1;
+            pair.val = pair.val * 1; // Placeholder: could invert or scale
         }
         return pair;
     }
 
+    /**
+     * Validate a key-value pair against a list of validator functions
+     * @param { string } key
+     * @param { any } val
+     * @param { Array<Function> } options - validators
+     * @returns { Object } validated pair
+     */
     static validate(key, val, options) {
         var pair = { key, val };
 
@@ -37,214 +56,177 @@ class UDMFValidator {
             return pair;
         }
 
-        var validator;
-
         for (var i = 0; i < options.length; i++) {
-
             if (!pair) return null;
-            validator = options[i];
-            pair = validator(pair);
-
+            pair = options[i](pair);
         }
 
         return pair;
     }
 
+    /**
+     * Split a space-separated string of IDs into an array of numbers
+     * Used for the 'moreids' key
+     * @param { Object } pair
+     */
     static tagList(pair) {
-
         if (pair.key == 'moreids') {
-            //if (pair.val)
             pair.val = pair.val.split(' ').map(tag => Number(tag));
         }
-
         return pair;
     }
 }
 
+/**
+ * UDMFBlock
+ * Base class representing a generic UDMF entity
+ */
 class UDMFBlock {
+
     /**
-     * Get Distance between two points
-     * @param { Number } x1 
-     * @param { Number } y1 
-     * @param { Number } x2 
-     * @param { Number } y2 
-     * @returns { Number }
+     * Compute 2D distance between two points
      */
     static getDistance(x1, y1, x2, y2) {
-        return Math.sqrt(((y2 - y1) * (y2 - y1)) + ((x2 - x1) * (x2 - x1)));
+        return Math.sqrt(((y2 - y1) ** 2) + ((x2 - x1) ** 2));
     }
 
     /**
-     * make an array out of standard args
-     * @param { UDMFBlock } block 
+     * Build an 'args' array from arg0..arg4
+     * @param { UDMFBlock } block
      */
     static appendArgs(block) {
         block.args = new Array(5);
-        var argStr = 'arg0';
 
         for (var i = 0; i < 5; i++) {
-            argStr = `arg${i}`;
-            if (_.has(block, argStr)) {
-                block.args[i] = block[argStr];
-            } else {
-                block.args[i] = 0;
-            }
+            const argStr = `arg${i}`;
+            block.args[i] = _.has(block, argStr) ? block[argStr] : 0;
         }
     }
 
     /**
-     * make an array out of ids
-     * @param { UDMFBlock } block 
+     * Build a 'tags' array from id and moreids
+     * @param { UDMFBlock } block
      */
     static appendTags(block) {
         if (block.id !== undefined || block.moreids !== undefined) {
-
             block.tags = [];
 
             if (block.id) block.tags.push(block.id);
             if (block.moreids) block.tags = block.tags.concat(block.moreids);
 
-            block.tags.forEach (tag => {
-                block.level.registerTag(tag, block);
-            }, block);
+            // Register tags in the level
+            block.tags.forEach(tag => block.level.registerTag(tag, block));
         }
     }
 
+    /**
+     * Constructor for generic UDMF block
+     */
     constructor(level, block, index, options) {
-
-        this.UUID = short.uuid();
+        this.UUID = short.uuid();   // Unique identifier
         this.index = index;
 
+        // Non-enumerable reference to the parent level
         Object.defineProperty(this, 'level', {
             enumerable: false,
             value: level
         });
 
+        // Validate and assign all properties from input block
         let props = Object.keys(block);
-
         props.forEach((prop) => {
-            var pair = UDMFValidator.validate(prop, block[prop], options);
+            const pair = UDMFValidator.validate(prop, block[prop], options);
             if (pair) this[pair.key] = pair.val;
-        }, this);
+        });
     }
 
     /**
-     * Get a UDMF block from Level using the type and index
-     * @param { ('vertex' | 'thing' | 'sidedef' | 'linedef' | 'sector') } name The type of entity to get
-     * @param { Number } index position of entity in an array
-     * @returns { ( Vertex | LineDef | Sector | Thing | SideDef) } returns a type of UDMF block
+     * Get a UDMF block by type and index
      */
     getBlock(name, index) {
         return this.level[name][index];
     }
 }
 
+/**
+ * Vertex
+ * Represents a map vertex
+ */
 class Vertex extends UDMFBlock {
-    constructor(level, block, index) 
-    {
+    constructor(level, block, index) {
+        // Apply boolean and Y validators
         super(level, block, index, [UDMFValidator.toBool, UDMFValidator.invertY]);
         this.isVertex = true;
-        this.v = new Vector2(this.x, this.y);
-
+        this.v = new Vector2(this.x, this.y); // Three.js vector representation
         return this;
     }
 
     /**
-     * Get 2D distance to another vertex
-     * @param { Vertex } vertex Another vertex
-     * @returns { Number } distance in map units
+     * Distance to another vertex
      */
     distanceTo(vertex) {
         return UDMFBlock.getDistance(this.x, this.y, vertex.x, vertex.y);
     }
 }
 
+/**
+ * LineDef
+ * Represents a linedef connecting two vertices
+ */
 class LineDef extends UDMFBlock {
     constructor(level, block, index) {
+        // Apply boolean and tag validators
         super(level, block, index, [UDMFValidator.toBool, UDMFValidator.tagList]);
         this.isLineDef = true;
 
         UDMFBlock.appendArgs(this);
         UDMFBlock.appendTags(this);
-        
+
+        // Vertices of the linedef
         this.vertices = [this.getBlock('vertices', this.v1), this.getBlock('vertices', this.v2)];
         this.length = this.vertices[0].distanceTo(this.vertices[1]);
 
-        this.sidedefs = [null, null];
-        this.sectors = [null, null];
+        this.sidedefs = [null, null];  // front and back sidedefs
+        this.sectors = [null, null];   // front and back sectors
         this.isFree = false;
-
         this.isModel = false;
 
-        this.back = {
-            sector: null,
-            sidedef: null
-        };
+        this.back = { sector: null, sidedef: null };
+        this.front = { sector: null, sidedef: null };
 
-        this.front = {
-            sector: null,
-            sidedef: null
-        };
-
-        if (_.has(this, 'sidefront') && this.sidefront > -1 ) {
+        // Assign front sidedef and sector
+        if (_.has(this, 'sidefront') && this.sidefront > -1) {
             this.front.sidedef = this.getBlock('sidedefs', this.sidefront);
             this.front.sector = this.front.sidedef.sector;
 
             this.sidedefs[0] = this.front.sidedef;
             this.sectors[0] = this.front.sector;
 
-            this.front.sector
-                .addLineDef(this)
-                .addVertex(this.vertices[0])
-                .addVertex(this.vertices[1]);
+            this.front.sector.addLineDef(this).addVertex(this.vertices[0]).addVertex(this.vertices[1]);
         }
 
-        if ( _.has(this, 'sideback') && this.sideback > -1  ) {
-            
-            
+        // Assign back sidedef and sector
+        if (_.has(this, 'sideback') && this.sideback > -1) {
             var sddf = this.getBlock('sidedefs', this.sideback);
-
-            if (!sddf)
-            {
-                console.log ( block );
-            }
-
             this.back.sidedef = sddf;
-
             this.back.sector = this.back.sidedef.sector;
 
             this.sectors[1] = this.back.sector;
             this.sidedefs[1] = this.back.sidedef;
 
-            this.back.sector
-                .addLineDef(this)
-                .addVertex(this.vertices[0])
-                .addVertex(this.vertices[1]);
+            this.back.sector.addLineDef(this).addVertex(this.vertices[0]).addVertex(this.vertices[1]);
         }
 
-        if (
-            this.sectors[0] !== null &&
-            this.sectors[1] !== null &&
-            this.sectors[0].index == this.sectors[1].index
-        ) {
+        // Check if linedef is fully internal to one sector
+        if (this.sectors[0] !== null && this.sectors[1] !== null && this.sectors[0].index == this.sectors[1].index) {
             this.isFree = true;
         }
 
-        if (this.front.sector && 
-            this.special && 
-            this.special == 160 && 
-            this.args &&
-            this.args[0] > 0
-        )
-        {
+        // Determine if this linedef is part of a 3D model sector
+        if (this.front.sector && this.special == 160 && this.args && this.args[0] > 0) {
             let arg0 = this.args[0];
-
-            if ( this.level.tagGroups.has('sector') )
-            {
-                if ( this.level.tagGroups.get('sector').has( arg0 ) )
-                {
-                    this.isModel = true;
-                }
+            if (this.level.tagGroups.has('sector') && this.level.tagGroups.get('sector').has(arg0)) {
+                this.isModel = true;
             }
         }
 
@@ -252,9 +234,7 @@ class LineDef extends UDMFBlock {
     }
 
     /**
-     * Get the sector opposite of the one provided, if it belongs to the same sector
-     * @param { Sector } sector 
-     * @returns Sector 
+     * Get the opposite sector of this linedef
      */
     getOtherSector(sector) {
         var localSectorIndex = this.sectors.indexOf(sector);
@@ -262,14 +242,15 @@ class LineDef extends UDMFBlock {
     }
 
     /**
-     * checks if provided linedef shares any vertices with this one
-     * @param { LineDef } linedef 
-     * @returns boolean
+     * Checks if another linedef shares any vertex
      */
     sharesVertexWith(linedef) {
         return this.v1 == linedef.v1 || this.v2 == linedef.v2;
     }
 
+    /**
+     * Get the vertex shared with another linedef
+     */
     getSharedVertex(linedef) {
         if (this.v1 == linedef.v1) return this.vertices[0];
         if (this.v2 == linedef.v2) return this.vertices[1];
@@ -277,42 +258,35 @@ class LineDef extends UDMFBlock {
     }
 
     /**
-     * Get the other vertex in this linedef provided one known vertex
-     * @param { Vertex } Vertex 
-     * @returns { Vertex }
+     * Get the opposite vertex from a given vertex
      */
     getOtherVertex(vertex) {
-        return (this.vertices.indexOf(vertex) < 0) ? null : (this.vertices[0].index == vertex.index) ? this.vertices[1] : this.vertices[0];
+        return (this.vertices.indexOf(vertex) < 0) ? null :
+            (this.vertices[0].index == vertex.index) ? this.vertices[1] : this.vertices[0];
     }
 
     hasVertex(vertex) {
-        if (this.v1 == vertex.index) return true;
-        if (this.v2 == vertex.index) return true;
-        return false;
+        return this.v1 == vertex.index || this.v2 == vertex.index;
     }
 
     getLeftmostVertex() {
-        if (this.vertices[0].x < this.vertices[1].x) return this.vertices[0];
-        return this.vertices[1];
+        return (this.vertices[0].x < this.vertices[1].x) ? this.vertices[0] : this.vertices[1];
     }
 
     getRightmostVertex() {
-        if (this.vertices[0].x > this.vertices[1].x) return this.vertices[0];
-        return this.vertices[1];
+        return (this.vertices[0].x > this.vertices[1].x) ? this.vertices[0] : this.vertices[1];
     }
 
+    /**
+     * Generate 3D walls if sector heights differ
+     */
     getWalls() {
-        let v1 = this.vertices[0];
-        let v2 = this.vertices[1];
+        if (this.sectors[0] !== null && this.sectors[1] !== null && !this.isFree && this.sectors[0].heightfloor != this.sectors[1].heightfloor) {
+            let v1 = this.vertices[0];
+            let v2 = this.vertices[1];
 
-        if (this.sectors[0] !== null &&
-            this.sectors[1] !== null &&
-            !this.isFree &&
-            this.sectors[0].heightfloor != this.sectors[1].heightfloor
-        ) {
             let floorLower = Math.min(this.sectors[0].heightfloor, this.sectors[1].heightfloor);
             let floorHigher = Math.max(this.sectors[0].heightfloor, this.sectors[1].heightfloor);
-
 
             let corners = [
                 new Vector3(v1.x, floorLower, v1.y),
@@ -325,32 +299,23 @@ class LineDef extends UDMFBlock {
                 corners = corners.reverse();
             }
 
-            let triangulated =
-                [
-                    corners[1], corners[2], corners[0],
-                    corners[0], corners[2], corners[3]
-                ].reverse();
-
-            //earcut( corners.map( v => v.toArray()).flat(), null, 3 ).map(index => corners[index]);
-            return triangulated;
-
+            return [
+                corners[1], corners[2], corners[0],
+                corners[0], corners[2], corners[3]
+            ].reverse();
         }
-
         return null;
     }
 
+    /**
+     * Get outline shape for sector height differences
+     */
     getShapes() {
-
-        if (this.sectors[0] !== null &&
-            this.sectors[1] !== null &&
-            !this.isFree &&
-            this.sectors[0].heightfloor != this.sectors[1].heightfloor
-        ) {
+        if (this.sectors[0] !== null && this.sectors[1] !== null && !this.isFree && this.sectors[0].heightfloor != this.sectors[1].heightfloor) {
             let v1 = this.vertices[0];
             let v2 = this.vertices[1];
             let floorLower = Math.min(this.sectors[0].heightfloor, this.sectors[1].heightfloor);
             let floorHigher = Math.max(this.sectors[0].heightfloor, this.sectors[1].heightfloor);
-
 
             let corners = [
                 new Vector3(v1.x, floorLower, v1.y),
@@ -361,78 +326,62 @@ class LineDef extends UDMFBlock {
 
             return { outline: corners };
         }
-
         return null;
     }
 }
 
-
+/**
+ * Sector
+ * Represents a map sector
+ */
 class Sector extends UDMFBlock {
-
-    constructor(level, block, index) 
-    {
+    constructor(level, block, index) {
         super(level, block, index, [UDMFValidator.toBool, UDMFValidator.tagList]);
 
         this.isSector = true;
 
+        // Arrays for sector geometry
         this.sidedefs = [];
         this.linedefs = [];
         this.vertices = [];
         this.sectors = [];
 
-        this.bounds = new Box2();
-
+        this.bounds = new Box2();      // Bounding box for vertices
         this.isFree = false;
 
+        // Floor/ceiling properties
         this.slopedFloor = false;
         this.slopedCeiling = false;
-
         this.terrainFloor = false;
         this.terrainCeiling = false;
 
+        // Model info
         this.isModel = false;
         this.hasFloors3D = false;
-
         this.modelLines = [];
         this.modelSectors = [];
 
-        //this.floorplane = new Plane();
-
-        
-
+        // Register tags
         UDMFBlock.appendTags(this);
-
 
         return this;
     }
 
-    addModel( linedef, sector)
-    {
-        if ( this.modelLines.indexOf (linedef) < 0)
-        {
-            this.modelLines.push(linedef);
-        }
-
-        if ( this.modelSectors.indexOf (sector) < 0)
-        {
-            this.modelSectors.push(sector);
-        }
+    /**
+     * Add model association to this sector
+     */
+    addModel(linedef, sector) {
+        if (this.modelLines.indexOf(linedef) < 0) this.modelLines.push(linedef);
+        if (this.modelSectors.indexOf(sector) < 0) this.modelSectors.push(sector);
     }
 
     addSideDef(sidedef) {
-        if (this.sidedefs.indexOf(sidedef) < 0) {
-            this.sidedefs.push(sidedef);
-        }
-
+        if (this.sidedefs.indexOf(sidedef) < 0) this.sidedefs.push(sidedef);
         return this;
     }
 
     addLineDef(linedef) {
-
-        if (this.linedefs.indexOf(linedef) < 0) {
-            this.linedefs.push(linedef);
-        }
-
+        if (this.linedefs.indexOf(linedef) < 0) this.linedefs.push(linedef);
         return this;
     }
 
@@ -441,131 +390,111 @@ class Sector extends UDMFBlock {
             this.vertices.push(vertex);
             this.bounds.expandByPoint(vertex.v);
         }
-
         return this;
     }
 
-    hasVertex(vertex)
-    {
+    hasVertex(vertex) {
         return this.vertices.indexOf(vertex) > -1;
     }
 
-    setSlopes()
-    {
-        this.linedefs.forEach ( linedef => {
+    /**
+     * Set slopes and terrain flags based on vertices and planes
+     */
+    setSlopes() {
+        this.linedefs.forEach(linedef => {
             let other = linedef.getOtherSector(this);
+            if (other) this.sectors.push(other);
+        });
 
-            if ( other )
-            {
-                this.sectors.push(other);
-            }
+        if (!this.sectors.length) this.isFree = true;
 
-        }, this);
-
-        if (!this.sectors.length)
-        {
-            this.isFree = true;
-        }
-
-        if (
-            _.has(this, 'floorplane_a') || _.has(this, 'floorplane_b') || _.has(this, 'floorplane_c') || _.has(this, 'floorplane_d')) {
+        // Detect sloped floor
+        if (_.has(this, 'floorplane_a') || _.has(this, 'floorplane_b') || _.has(this, 'floorplane_c') || _.has(this, 'floorplane_d')) {
             this.slopedFloor = true;
         }
 
+        // Detect sloped ceiling
         if (_.has(this, 'ceilingplane_a') || _.has(this, 'ceilingplane_b') || _.has(this, 'ceilingplane_c') || _.has(this, 'ceilingplane_d')) {
             this.slopedCeiling = true;
         }
 
-        if ( this.vertices.length == 3 )
-        {
+        // Detect terrain from vertices
+        if (this.vertices.length == 3) {
             let hasFloorTerrain = false;
             let hasCeilTerrain = false;
-
-            this.vertices.forEach( vertex => {
-
-                if (vertex.zfloor !== undefined && !hasFloorTerrain)
-                {
-                    hasFloorTerrain = true;
-                }
-
-                if (vertex.zceiling !== undefined && !hasCeilTerrain)
-                {
-                    hasCeilTerrain = true;
-                }
-
-            }, this);
+            this.vertices.forEach(vertex => {
+                if (vertex.zfloor !== undefined && !hasFloorTerrain) hasFloorTerrain = true;
+                if (vertex.zceiling !== undefined && !hasCeilTerrain) hasCeilTerrain = true;
+            });
 
             if (hasFloorTerrain) this.terrainFloor = true;
             if (hasCeilTerrain) this.terrainCeiling = true;
-
         }
-
-        if (this.slopedFloor)
-        {
-
-        }
-
     }
-
-
 }
 
+/**
+ * SideDef
+ * Represents a side of a linedef
+ */
 class SideDef extends UDMFBlock {
     constructor(level, block, index) {
         super(level, block, index, [UDMFValidator.toBool]);
         this.isSideDef = true;
 
+        // Link to sector
         this.sector = this.getBlock('sectors', this.sector);
-
         this.sector.addSideDef(this);
 
         return this;
     }
 }
 
+/**
+ * Thing
+ * Represents a map object/thing
+ */
 class Thing extends UDMFBlock {
     constructor(level, block, index) {
-        
         super(level, block, index, [UDMFValidator.toBool, UDMFValidator.invertY, UDMFValidator.tagList]);
-
         UDMFBlock.appendArgs(this);
         UDMFBlock.appendTags(this);
 
-        this.v = new Vector2( this.x, this.y );
-
+        this.v = new Vector2(this.x, this.y);
         return this;
     }
 }
 
-class TaggedList 
-{
-
-    constructor(type, tag) 
-    {
+/**
+ * TaggedList
+ * Maintains list of entities grouped by tag
+ */
+class TaggedList {
+    constructor(type, tag) {
         this.type = type;
         this.uuid = short();
         this.tag = tag;
         this[type] = [];
     }
 
-    add(item) 
-    {
+    add(item) {
         if (this[this.type].indexOf(item) < 0) {
             this[this.type].push(item);
         }
     }
 
-    getList()
-    {
+    getList() {
         return this[this.type];
     }
-
 }
 
+/**
+ * Level
+ * Main map structure holding all entities
+ */
 class Level {
     constructor(data) {
-
-        this.tagGroups = new Map();
+        this.tagGroups = new Map();    // Tag-indexed groups for quick lookup
 
         this.modelLines = [];
         this.modelSectors = [];
@@ -577,116 +506,77 @@ class Level {
         this.things = [];
         this.shapes = null;
 
-        this.ingest(data);
+        this.ingest(data);              // Load data
     }
 
+    /**
+     * Ingest raw map data
+     */
     ingest(data) {
-
-        /*
-        let textmapjson = _.filter(data[0], (candidate) => { 
-            return _.isObject(candidate) && !_.isArray(candidate); 
-        });
-        */
-
-        //textmapjson = _.groupBy(textmapjson, 'type');
         var textmapjson = data;
         this.raw = JSON.parse(JSON.stringify(_.toPlainObject(textmapjson)));
 
-        //console.log(this.raw);
-
-        /* vertices */
-        textmapjson.vertex.forEach((block, index) => {
-            this.addVertex(block, index);
-        }, this);
-
+        // Create vertices
+        textmapjson.vertex.forEach((block, index) => this.addVertex(block, index));
         this.vertices.sort((a, b) => a.index - b.index);
 
-        /* sectors */
-        textmapjson.sector.forEach((block, index) => {
-            this.addSector(block, index);
-        }, this);
-
+        // Create sectors
+        textmapjson.sector.forEach((block, index) => this.addSector(block, index));
         this.sectors.sort((a, b) => a.index - b.index);
 
-        /* sidedefs */
-        textmapjson.sidedef.forEach((block, index) => {
-            this.addSideDef(block, index);
-        }, this);
-
+        // Create sidedefs
+        textmapjson.sidedef.forEach((block, index) => this.addSideDef(block, index));
         this.sidedefs.sort((a, b) => a.index - b.index);
 
-        /* linedefs */
-        textmapjson.linedef.forEach((block, index) => {
-            this.addLineDef(block, index);
-        }, this);
-
+        // Create linedefs
+        textmapjson.linedef.forEach((block, index) => this.addLineDef(block, index));
         this.linedefs.sort((a, b) => a.index - b.index);
 
-        /* things */
-        textmapjson.thing.forEach((block, index) => {
-            this.addThing(block, index);
-        }, this);
-
+        // Create things
+        textmapjson.thing.forEach((block, index) => this.addThing(block, index));
         this.things.sort((a, b) => a.index - b.index);
 
-        this.sectors = this.sectors.map (sector => {
-            sector.setSlopes();
-            return sector;
-        });
-
-        this.things.forEach( thing => {
-
-        });
-
-        //console.log(this.tagGroups);
-
+        // Calculate slopes for all sectors
+        this.sectors = this.sectors.map(sector => { sector.setSlopes(); return sector; });
     }
 
     addVertex(block, index) {
-        let vtx = new Vertex(this, block, index);
-        this.vertices.push(vtx);
+        this.vertices.push(new Vertex(this, block, index));
     }
 
     addSideDef(block, index) {
-        let sdef = new SideDef(this, block, index);
-        this.sidedefs.push(sdef);
+        this.sidedefs.push(new SideDef(this, block, index));
     }
 
     addLineDef(block, index) {
-
         let ldef = new LineDef(this, block, index);
         this.linedefs.push(ldef);
 
-        if ( ldef.isModel )
-        {
+        // Handle 3D model lines
+        if (ldef.isModel) {
             this.modelLines.push(ldef);
             let modelsector = ldef.front.sector;
 
-            if ( this.modelSectors.indexOf(modelsector) < 0 )
-            {
+            if (this.modelSectors.indexOf(modelsector) < 0) {
                 modelsector.isModel = true;
                 this.modelSectors.push(modelsector);
             }
 
-            this.tagGroups
-                .get( 'sector' )
-                .get ( ldef.args[0] )
-                .getList()
-                .forEach (taggedSector => {
-                    taggedSector.hasFloors3D = true;
-                    taggedSector.addModel(ldef, modelsector);
-                });
+            this.tagGroups.get('sector').get(ldef.args[0]).getList().forEach(taggedSector => {
+                taggedSector.hasFloors3D = true;
+                taggedSector.addModel(ldef, modelsector);
+            });
         }
     }
 
-    addSector(block, index) 
-    {
-        let sec = new Sector(this, block, index);
-        this.sectors.push(sec);
+    addSector(block, index) {
+        this.sectors.push(new Sector(this, block, index));
     }
 
+    /**
+     * Register a tag for an entity
+     */
     registerTag(tag, item) {
-
         if (!this.tagGroups.has(item.blocktype)) {
             this.tagGroups.set(item.blocktype, new Map());
         }
@@ -698,21 +588,18 @@ class Level {
         }
 
         let taggedlist = taggedTypeGroup.get(tag);
-
         taggedlist.add(item);
 
-        if ( item.tagGroups == undefined ) item.tagGroups = [];
-
-        if ( item.tagGroups.indexOf(taggedlist) < 0 ) item.tagGroups.push(taggedlist);
+        if (item.tagGroups == undefined) item.tagGroups = [];
+        if (item.tagGroups.indexOf(taggedlist) < 0) item.tagGroups.push(taggedlist);
     }
 
     addThing(block, index) {
-        let thng = new Thing(this, block, index);
-        this.things.push(thng);
+        this.things.push(new Thing(this, block, index));
     }
-
 }
 
+// Exported UDMF API
 const UDMF = {
     Level, Sector, Vertex, Thing, SideDef, LineDef
 };
